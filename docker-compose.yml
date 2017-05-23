@@ -1,0 +1,16 @@
+version: "2"
+services:
+  web:
+    build: .
+    ports:
+      - "4567:4567"
+    environment:
+     - "DB_URL=jdbc:postgresql://db:5432/dockerize"
+    links:
+      - db
+  db:
+    image: postgres:9.6.3
+    ports:
+      - "5432:5432"
+    environment:
+      - "POSTGRES_DB=dockerize"

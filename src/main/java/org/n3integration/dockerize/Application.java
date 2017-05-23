@@ -1,10 +1,5 @@
 package org.n3integration.dockerize;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-
 import static spark.Spark.get;
 
 /**
@@ -12,26 +7,18 @@ import static spark.Spark.get;
  */
 public class Application {
 
-    static final String DEFAULT_USER = "World";
+    private final DataAccess dataAccess;
 
-    public static void main(String[] args) {
-        get("/", (req, res) -> String.format("Hello %s", getUsername()));
+    public Application() {
+        dataAccess = new DataAccess();
     }
 
-    public static String getUsername() {
-        // 1. check for presence of environment variable
-        String user = System.getenv("USER");
-        if(user == null) {
-            // 2. load from properties file, if available
-            Properties props = new Properties();
-            try(InputStream instream = new FileInputStream("/data/application.properties")) {
-                props.load(instream);
-                return props.getProperty("user.name", DEFAULT_USER);
-            }
-            catch(IOException e) {
-                return DEFAULT_USER;
-            }
-        }
-        return user;
+    public static void main(String[] args) {
+        Application app = new Application();
+        get("/", (req, res) -> String.format("Hello %s", app.getUsername()));
+    }
+
+    public String getUsername() {
+        return dataAccess.getUsername();
     }
 }
