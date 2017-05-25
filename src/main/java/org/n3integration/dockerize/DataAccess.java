@@ -55,12 +55,11 @@ public class DataAccess {
     public String getUsername() {
         String query = "SELECT name FROM USERS LIMIT 1";
         String username = getOrElse("USER", DEFAULT_USER);
-        try(PreparedStatement stmt = getConnection().prepareStatement(query)) {
-            ResultSet rs = stmt.executeQuery();
+        try(PreparedStatement stmt = getConnection().prepareStatement(query);
+            ResultSet rs = stmt.executeQuery()) {
             if(rs.next()) {
                 username = rs.getString(1);
             }
-            rs.close();
         }
         catch(SQLException e) {
             throw new RuntimeException(e);
