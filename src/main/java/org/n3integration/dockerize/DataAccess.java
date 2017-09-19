@@ -38,11 +38,7 @@ public class DataAccess {
                     props.setProperty("password", getOrElse("DB_PASS", DEFAULT_PASS));
                     final Connection conn = DriverManager.getConnection(url, props);
                     Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                        try {
-                            conn.close();
-                        } catch (SQLException e) {
-                            logger.error("Failed to close database connection");
-                        }
+                        closeQuietly(conn);
                     }));
                     return conn;
                 }
@@ -54,7 +50,7 @@ public class DataAccess {
 
     public String getUsername() {
         String query = "SELECT name FROM USERS LIMIT 1";
-        String username = getOrElse("USER", DEFAULT_USER);
+        String username = getOrElse("USER", "");
         try(PreparedStatement stmt = getConnection().prepareStatement(query);
             ResultSet rs = stmt.executeQuery()) {
             if(rs.next()) {
@@ -62,11 +58,23 @@ public class DataAccess {
             }
         }
         catch(SQLException e) {
-            throw new RuntimeException(e);
+            // cleanup connection
+            closeQuietly(getConnection());
+            // fallback to cache if defined
+            handleException(username, e);
+        }
+        catch(RuntimeException e) {
+            // handle errors establishing connection
+            handleException(username, e);
         }
         return username;
     }
 
+    protected static void handleException(String defaultValue, Exception e) {
+        if(defaultValue.equals("")) {
+            throw new RuntimeException(e);
+        }
+    }
 
     protected static Connection getConnection() {
         return threadConn.get();
@@ -78,5 +86,16 @@ public class DataAccess {
             return defaultValue;
         }
         return value;
+    }
+
+    protected static void closeQuietly(Connection conn) {
+        try {
+            if(conn != null) {
+                conn.close();
+            }
+        }
+        catch(SQLException e) {
+            /* ignore */
+        }
     }
 }
