@@ -1,12 +1,15 @@
-version: "2"
+version: "3"
 services:
   www:
     build: .
     ports:
-      - "4567"
+      - "4567:4567"
     environment:
      - "DB_URL=jdbc:postgresql://db:5432/dockerize"
+     #- "USER=Cache"
     links:
+      - db
+    depends_on:
       - db
   db:
     image: postgres:9.6.3
@@ -19,15 +22,13 @@ services:
     environment:
       - "DURATION=1m"
       - "TARGET=http://www:4567"
-    links:
-      - www
   chaos-pause:
     image: gaiaadm/pumba
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: "pumba --debug --interval 30s pause --duration 10s re2:^java_db_[0-9]{1,2}"
+    command: "pumba --debug --interval 40s pause --duration 20s re2:dockerizejava_db_[0-9]{1,2}"
   chaos-loss:
     image: gaiaadm/pumba
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: "pumba --debug --interval 15s netem --duration 5s loss -p '50' re2:^java_db_[0-9]{1,2}"
+    command: "pumba --debug --interval 15s netem --duration 5s loss -p '50' re2:dockerizejava_db_[0-9]{1,2}"
